@@ -14,7 +14,7 @@
     "@react-native-async-storage/async-storage": "^1.21.0",
     "@supabase/supabase-js": "^2.49.4",
     "@types/react": "~18.2.45",
-    "expo": "~50.0.0",
+    "expo": "~52.0.44",
     "expo-blur": "~12.8.0",
     "expo-haptics": "~12.8.1",
     "expo-linking": "~5.0.2",
