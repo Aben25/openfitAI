@@ -1,33 +1,114 @@
-import { View, Text, FlatList, Pressable, TouchableOpacity } from 'react-native';
-import { Link } from 'expo-router';
-import { useState } from 'react';
-
-// Mock data for workouts
-const MOCK_WORKOUTS = [
-  { id: '1', name: 'Full Body Strength', exercises: 8, duration: '45 min', lastPerformed: '2 days ago' },
-  { id: '2', name: 'Upper Body Focus', exercises: 6, duration: '30 min', lastPerformed: '5 days ago' },
-  { id: '3', name: 'Lower Body Power', exercises: 7, duration: '40 min', lastPerformed: '1 week ago' },
-  { id: '4', name: 'Core Crusher', exercises: 5, duration: '25 min', lastPerformed: '3 days ago' },
-  { id: '5', name: 'Cardio Blast', exercises: 4, duration: '20 min', lastPerformed: 'Today' },
-];
+import { View, Text, FlatList, Pressable, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { useState, useEffect } from 'react';
+import { useWorkout } from '../../src/context/WorkoutContext';
 
 export default function WorkoutsScreen() {
+  const router = useRouter();
+  const { 
+    workouts, 
+    recommendedWorkouts, 
+    isLoading, 
+    error, 
+    fetchWorkouts, 
+    getRecommendedWorkouts 
+  } = useWorkout();
+  
   const [activeTab, setActiveTab] = useState('my');
+  
+  // Fetch workouts on component mount
+  useEffect(() => {
+    fetchWorkouts();
+    getRecommendedWorkouts();
+  }, []);
   
   const renderWorkoutItem = ({ item }) => (
     <Link href={`/workouts/${item.id}`} asChild>
       <Pressable>
         <View className="bg-card p-4 rounded-xl border border-border mb-3">
           <Text className="text-lg font-semibold text-text">{item.name}</Text>
+          
+          {/* Category tag if available */}
+          {item.category && (
+            <View className="bg-primary/20 self-start px-2 py-1 rounded-md mt-1 mb-2">
+              <Text className="text-xs text-primary font-medium">{item.category}</Text>
+            </View>
+          )}
+          
           <View className="flex-row justify-between mt-2">
-            <Text className="text-textSecondary">{item.exercises} exercises</Text>
-            <Text className="text-textSecondary">{item.duration}</Text>
+            <Text className="text-textSecondary">
+              {item.workout_exercises ? item.workout_exercises.length : 0} exercises
+            </Text>
+            <Text className="text-textSecondary">{item.estimated_duration || '—'} min</Text>
           </View>
-          <Text className="text-xs text-textSecondary mt-2">Last performed: {item.lastPerformed}</Text>
+          
+          {item.last_performed && (
+            <Text className="text-xs text-textSecondary mt-2">
+              Last performed: {new Date(item.last_performed).toLocaleDateString()}
+            </Text>
+          )}
         </View>
       </Pressable>
     </Link>
   );
+
+  // Display content based on loading/error state
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <View className="flex-1 justify-center items-center py-10">
+          <ActivityIndicator size="large" color="#4A90E2" />
+          <Text className="text-textSecondary mt-4">Loading workouts...</Text>
+        </View>
+      );
+    }
+    
+    if (error) {
+      return (
+        <View className="flex-1 justify-center items-center py-10">
+          <Text className="text-error mb-4">Failed to load workouts</Text>
+          <TouchableOpacity 
+            className="bg-primary py-2 px-4 rounded-lg"
+            onPress={() => activeTab === 'my' ? fetchWorkouts() : getRecommendedWorkouts()}
+          >
+            <Text className="text-white">Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    const dataToShow = activeTab === 'my' ? workouts : recommendedWorkouts;
+    
+    if (dataToShow.length === 0) {
+      return (
+        <View className="flex-1 justify-center items-center py-10">
+          <Text className="text-textSecondary mb-4">
+            {activeTab === 'my' 
+              ? "You don't have any workouts yet" 
+              : "No recommended workouts available"}
+          </Text>
+          {activeTab === 'my' && (
+            <TouchableOpacity 
+              className="bg-primary py-2 px-4 rounded-lg"
+              onPress={() => router.push('/workouts/create')}
+            >
+              <Text className="text-white">Create Your First Workout</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    }
+    
+    return (
+      <FlatList
+        data={dataToShow}
+        renderItem={renderWorkoutItem}
+        keyExtractor={item => item.id}
+        showsVerticalScrollIndicator={false}
+        className="mb-16"
+      />
+    );
+  };
 
   return (
     <View className="flex-1 bg-background p-4">
@@ -52,13 +133,7 @@ export default function WorkoutsScreen() {
       </View>
       
       {/* Workout List */}
-      <FlatList
-        data={MOCK_WORKOUTS}
-        renderItem={renderWorkoutItem}
-        keyExtractor={item => item.id}
-        showsVerticalScrollIndicator={false}
-        className="mb-16"
-      />
+      {renderContent()}
       
       {/* Create Workout Button - Fixed at bottom */}
       <View className="absolute bottom-4 right-4 left-4">

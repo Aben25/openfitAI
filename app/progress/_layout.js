@@ -1,40 +1,22 @@
-import { View, Text, ScrollView, FlatList, TouchableOpacity } from 'react-native';
-import { Link, Stack } from 'expo-router';
-import { useState } from 'react';
+import React from 'react';
+import { View, Text } from 'react-native';
+import { Stack } from 'expo-router';
 
 export default function ProgressLayout() {
   return (
-    <Stack>
-      <Stack.Screen 
-        name="index" 
-        options={{ 
-          title: "Progress",
+    <>
+      <Stack
+        screenOptions={{
           headerStyle: {
-            backgroundColor: '#5D4FEB',
+            backgroundColor: '#f5f5f5',
           },
-          headerTintColor: '#FFFFFF',
-        }} 
-      />
-      <Stack.Screen 
-        name="weight-history" 
-        options={{ 
-          title: "Weight History",
-          headerStyle: {
-            backgroundColor: '#5D4FEB',
+          headerTintColor: '#333',
+          headerTitleStyle: {
+            fontWeight: 'bold',
           },
-          headerTintColor: '#FFFFFF',
-        }} 
+          headerBackTitle: 'Back',
+        }}
       />
-      <Stack.Screen 
-        name="workout-history" 
-        options={{ 
-          title: "Workout History",
-          headerStyle: {
-            backgroundColor: '#5D4FEB',
-          },
-          headerTintColor: '#FFFFFF',
-        }} 
-      />
-    </Stack>
+    </>
   );
 }
