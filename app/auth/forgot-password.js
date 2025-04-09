@@ -1,28 +1,42 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function ForgotPassword() {
-  const [email, setEmail] = React.useState('');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const { resetPassword } = useAuth();
   const router = useRouter();
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     if (!email.trim()) {
       Alert.alert('Error', 'Please enter your email address');
       return;
     }
     
-    // This would typically call an API to send a password reset email
-    Alert.alert(
-      'Reset Link Sent',
-      `A password reset link has been sent to ${email}`,
-      [
-        {
-          text: 'Back to Login',
-          onPress: () => router.push('/auth/login'),
-        }
-      ]
-    );
+    setLoading(true);
+    try {
+      const { error } = await resetPassword(email);
+      if (error) throw error;
+      
+      setResetSent(true);
+      Alert.alert(
+        'Reset Link Sent',
+        `A password reset link has been sent to ${email}`,
+        [
+          {
+            text: 'Back to Login',
+            onPress: () => router.push('/auth/login'),
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Reset Failed', error.message || 'An error occurred while sending the reset link');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,15 +51,27 @@ export default function ForgotPassword() {
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
+        editable={!loading && !resetSent}
       />
       
-      <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
-        <Text style={styles.buttonText}>Send Reset Link</Text>
+      <TouchableOpacity 
+        style={[styles.button, (loading || resetSent) && styles.buttonDisabled]} 
+        onPress={handleResetPassword}
+        disabled={loading || resetSent}
+      >
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.buttonText}>
+            {resetSent ? 'Reset Link Sent' : 'Send Reset Link'}
+          </Text>
+        )}
       </TouchableOpacity>
       
       <TouchableOpacity 
         style={styles.linkButton}
         onPress={() => router.push('/auth/login')}
+        disabled={loading}
       >
         <Text style={styles.linkText}>Back to Login</Text>
       </TouchableOpacity>
@@ -88,6 +114,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 15,
+  },
+  buttonDisabled: {
+    backgroundColor: '#a5c7f0',
   },
   buttonText: {
     color: 'white',
